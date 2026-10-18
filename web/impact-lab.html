@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>WhyGraph / RECALL — Impact Lab</title>
+  <title>WhyGraph / RECALL — Impact Lab &amp; Copilot</title>
   <meta name="description" content="Simulate architectural and vendor changes. See what breaks, why it breaks, and who must review it — grounded in FalkorDB graph traversals and algorithms.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -120,6 +120,9 @@
         <button class="impact-lab-btn-secondary" id="btn-reset-demo">
           ↻ Reset Graph State
         </button>
+        <button class="impact-lab-btn-secondary" id="btn-open-copilot-bar">
+          🤖 Ask RECALL Copilot
+        </button>
         <span class="impact-lab-execution-stats" id="lab-stats">Ready to simulate. Select a scenario above.</span>
       </div>
     </section>
@@ -154,7 +157,14 @@
         <div class="impact-lab-card-header">
           <span class="impact-lab-card-num">02</span>
           <h3 class="impact-lab-card-title">Graph Traversal &amp; Blast Radius Path</h3>
-          <span class="impact-lab-chip-tag" id="canvas-node-count">0 nodes</span>
+          <div class="impact-lab-canvas-actions">
+            <button class="canvas-tool-btn" id="btn-zoom-in" title="Zoom In">+</button>
+            <button class="canvas-tool-btn" id="btn-zoom-out" title="Zoom Out">&minus;</button>
+            <button class="canvas-tool-btn" id="btn-zoom-fit" title="Fit to View">&#x26F6;</button>
+            <button class="canvas-tool-btn" id="btn-zoom-reset" title="Reset View">&#x21BA;</button>
+            <button class="canvas-tool-btn text-toggle-btn" id="btn-toggle-text-alt" title="Toggle Accessible Text Table">Accessible Table View</button>
+            <span class="impact-lab-chip-tag" id="canvas-node-count">0 nodes</span>
+          </div>
         </div>
         <div class="impact-lab-canvas-wrapper" id="canvas-wrapper">
           <svg class="impact-lab-svg-canvas" id="lab-canvas" viewBox="-400 -250 800 500">
@@ -166,8 +176,10 @@
                 <path d="M 0 1 L 9 5 L 0 9 z" fill="#3df2c8"/>
               </marker>
             </defs>
-            <g id="lab-edges-layer"></g>
-            <g id="lab-nodes-layer"></g>
+            <g id="lab-zoom-container">
+              <g id="lab-edges-layer"></g>
+              <g id="lab-nodes-layer"></g>
+            </g>
           </svg>
           <div class="impact-lab-canvas-legend">
             <span class="leg-item"><i class="leg-dot c-dec"></i> Decision</span>
@@ -177,6 +189,15 @@
             <span class="leg-item"><i class="leg-dot c-tsk"></i> Task/Handoff</span>
           </div>
         </div>
+
+        <!-- Accessible Textual Alternative (Toggleable) -->
+        <div class="impact-lab-text-alt" id="canvas-text-alt" hidden>
+          <div class="text-alt-title">Accessible Graph Nodes &amp; Lineage:</div>
+          <ul id="text-alt-list" class="text-alt-list">
+            <!-- populated by JS -->
+          </ul>
+        </div>
+
         <div class="impact-lab-node-inspector" id="node-inspector">
           <div class="inspector-empty">Click any node in the graph above to inspect its properties and FalkorDB edge connections.</div>
         </div>
@@ -282,6 +303,196 @@
 
     </section>
   </main>
+
+  <!-- =========================================================================
+       AI ROBOT ASSISTANT: RECALL COPILOT
+       Glossy Y2K 3D Sculptural Robot with Real FalkorDB Grounding
+       ========================================================================= -->
+  <!-- Floating Launcher Button -->
+  <button class="copilot-launcher-btn" id="copilot-launcher" aria-label="Open RECALL Copilot" title="Ask RECALL Copilot (Graph-Grounded AI)">
+    <div class="copilot-launcher-robot-avatar">
+      <svg viewBox="0 0 100 100" class="copilot-mini-robot-svg" aria-hidden="true">
+        <defs>
+          <radialGradient id="miniHeadGrad" cx="40%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#4e72ff"/>
+            <stop offset="60%" stop-color="#1a2d8a"/>
+            <stop offset="100%" stop-color="#0b1348"/>
+          </radialGradient>
+          <linearGradient id="miniVisorGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#090d24"/>
+            <stop offset="100%" stop-color="#141c48"/>
+          </linearGradient>
+        </defs>
+        <!-- Antenna -->
+        <line x1="50" y1="18" x2="50" y2="8" stroke="#ff7a45" stroke-width="4" stroke-linecap="round"/>
+        <circle cx="50" cy="7" r="4.5" fill="#ffd83d"/>
+        <!-- Head -->
+        <rect x="20" y="18" width="60" height="52" rx="20" fill="url(#miniHeadGrad)" stroke="#3df2c8" stroke-width="2.5"/>
+        <!-- Visor -->
+        <rect x="28" y="28" width="44" height="24" rx="10" fill="url(#miniVisorGrad)" stroke="#223377" stroke-width="1.5"/>
+        <!-- Eyes -->
+        <circle cx="40" cy="40" r="4.5" fill="#3df2c8" class="robot-eye-left"/>
+        <circle cx="60" cy="40" r="4.5" fill="#3df2c8" class="robot-eye-right"/>
+        <!-- Torso -->
+        <path d="M 30 74 Q 50 82 70 74 L 74 94 Q 50 98 26 94 Z" fill="#141d54" stroke="#ff3d9a" stroke-width="2"/>
+      </svg>
+    </div>
+    <span class="copilot-launcher-label">Copilot ✦</span>
+    <span class="copilot-pulse-dot"></span>
+  </button>
+
+  <!-- Copilot Drawer / Modal -->
+  <aside class="copilot-drawer" id="copilot-drawer" aria-labelledby="copilot-title" hidden>
+    <div class="copilot-drawer-header">
+      <div class="copilot-header-brand">
+        <div class="copilot-header-icon">
+          <svg viewBox="0 0 100 100" class="copilot-header-robot-svg" aria-hidden="true">
+            <rect x="20" y="20" width="60" height="52" rx="18" fill="#1e3299" stroke="#3df2c8" stroke-width="2.5"/>
+            <rect x="28" y="30" width="44" height="22" rx="9" fill="#080c26"/>
+            <circle cx="41" cy="41" r="4" fill="#3df2c8"/>
+            <circle cx="59" cy="41" r="4" fill="#3df2c8"/>
+            <circle cx="50" cy="11" r="4.5" fill="#ffd83d"/>
+            <line x1="50" y1="20" x2="50" y2="12" stroke="#ff7a45" stroke-width="3"/>
+          </svg>
+        </div>
+        <div>
+          <h3 class="copilot-drawer-title" id="copilot-title">RECALL Copilot</h3>
+          <div class="copilot-drawer-sub">
+            <span class="copilot-live-dot"></span> Grounded in FalkorDB Graph Evidence
+          </div>
+        </div>
+      </div>
+      <button class="copilot-close-btn" id="copilot-close-btn" aria-label="Close Copilot Panel">&times;</button>
+    </div>
+
+    <!-- Copilot Body / Chat history -->
+    <div class="copilot-drawer-body" id="copilot-body">
+      <!-- 3D Robot Character Hero Greeting -->
+      <div class="copilot-welcome-card" id="copilot-welcome">
+        <div class="robot-3d-stage" id="robot-3d-stage">
+          <div class="robot-3d-character" id="robot-3d-character">
+            <!-- Full Glossy 3D Sculptural Robot Character SVG -->
+            <svg viewBox="0 0 200 240" class="robot-3d-svg" aria-hidden="true">
+              <defs>
+                <!-- Head Radial -->
+                <radialGradient id="rHead" cx="35%" cy="30%" r="70%">
+                  <stop offset="0%" stop-color="#5a85ff"/>
+                  <stop offset="50%" stop-color="#233dbb"/>
+                  <stop offset="100%" stop-color="#0d195c"/>
+                </radialGradient>
+                <!-- Visor Gradient -->
+                <linearGradient id="rVisor" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#05081c"/>
+                  <stop offset="50%" stop-color="#0d143c"/>
+                  <stop offset="100%" stop-color="#162058"/>
+                </linearGradient>
+                <!-- Specular Highlight -->
+                <linearGradient id="rSpecular" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#ffffff" stop-opacity="0.8"/>
+                  <stop offset="60%" stop-color="#3df2c8" stop-opacity="0.2"/>
+                  <stop offset="100%" stop-color="transparent"/>
+                </linearGradient>
+                <!-- Collar Metallic -->
+                <linearGradient id="rCollar" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#ff7a45"/>
+                  <stop offset="50%" stop-color="#ff3d9a"/>
+                  <stop offset="100%" stop-color="#9b51e0"/>
+                </linearGradient>
+                <filter id="robotGlow">
+                  <feGaussianBlur stdDeviation="3" result="blur"/>
+                  <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+                </filter>
+              </defs>
+
+              <!-- Floating Shadow -->
+              <ellipse cx="100" cy="225" rx="55" ry="10" fill="rgba(0,0,0,0.4)" filter="url(#robotGlow)"/>
+
+              <!-- Robotic Torso -->
+              <g class="robot-torso-group">
+                <path d="M 60 155 Q 100 172 140 155 L 148 200 Q 100 215 52 200 Z" fill="#131c50" stroke="#25388c" stroke-width="2.5"/>
+                <!-- Torso Core Reactor -->
+                <circle cx="100" cy="180" r="12" fill="#080e2e" stroke="#3df2c8" stroke-width="2"/>
+                <circle cx="100" cy="180" r="6" fill="#3df2c8" filter="url(#robotGlow)" class="robot-reactor-pulse"/>
+                <!-- Shoulder Pods -->
+                <circle cx="48" cy="165" r="10" fill="#1f2f82" stroke="#ff7a45" stroke-width="2"/>
+                <circle cx="152" cy="165" r="10" fill="#1f2f82" stroke="#ff7a45" stroke-width="2"/>
+              </g>
+
+              <!-- Collar Band -->
+              <path d="M 65 146 Q 100 160 135 146 Q 100 140 65 146 Z" fill="url(#rCollar)"/>
+
+              <!-- Robot Head Group (interactive mouse tilt) -->
+              <g class="robot-head-group" id="robot-head-group">
+                <!-- Antenna -->
+                <line x1="100" y1="42" x2="100" y2="18" stroke="#ff7a45" stroke-width="4.5" stroke-linecap="round"/>
+                <circle cx="100" cy="15" r="8" fill="#ffd83d" stroke="#ffffff" stroke-width="1.5" filter="url(#robotGlow)"/>
+                <!-- Ear Pods -->
+                <rect x="30" y="65" width="12" height="35" rx="6" fill="#ff3d9a" stroke="#ffffff" stroke-width="1"/>
+                <rect x="158" y="65" width="12" height="35" rx="6" fill="#ff3d9a" stroke="#ffffff" stroke-width="1"/>
+
+                <!-- Main Rounded Head -->
+                <rect x="40" y="42" width="120" height="104" rx="36" fill="url(#rHead)" stroke="#3df2c8" stroke-width="3"/>
+                <!-- Specular Highlight Overlay -->
+                <path d="M 50 50 Q 80 44 110 46 Q 60 65 50 90 Z" fill="url(#rSpecular)"/>
+
+                <!-- Visor Screen -->
+                <rect x="56" y="64" width="88" height="50" rx="20" fill="url(#rVisor)" stroke="#273985" stroke-width="2"/>
+
+                <!-- Glowing Cyan Eyes -->
+                <g class="robot-eyes-pair">
+                  <ellipse cx="80" cy="88" rx="10" ry="11" fill="#3df2c8" class="r-eye-l" filter="url(#robotGlow)"/>
+                  <circle cx="78" cy="85" r="3.5" fill="#ffffff"/>
+
+                  <ellipse cx="120" cy="88" rx="10" ry="11" fill="#3df2c8" class="r-eye-r" filter="url(#robotGlow)"/>
+                  <circle cx="118" cy="85" r="3.5" fill="#ffffff"/>
+                </g>
+                <!-- Friendly Digital Mouth Smile -->
+                <path d="M 88 102 Q 100 108 112 102" fill="none" stroke="#ffd83d" stroke-width="2.5" stroke-linecap="round"/>
+              </g>
+            </svg>
+          </div>
+        </div>
+
+        <div class="copilot-welcome-msg">
+          <div class="copilot-welcome-title">Ask RECALL Copilot</div>
+          <p class="copilot-welcome-text">
+            I am your graph-grounded assistant. I query live FalkorDB Cypher, trace decisions, inspect stale documents, and calculate blast radius across systems.
+          </p>
+        </div>
+
+        <!-- Prompt Suggestions -->
+        <div class="copilot-suggestions-title">SUGGESTED INVESTIGATIONS:</div>
+        <div class="copilot-chips-grid">
+          <button class="copilot-chip-btn" data-query="Explain the impact of reversing the billing queue migration">
+            ⚡ Explain this impact
+          </button>
+          <button class="copilot-chip-btn" data-query="Why did we move billing off the old queue, and what breaks if we undo it?">
+            🔍 Show the source path
+          </button>
+          <button class="copilot-chip-btn" data-query="Which decisions are stale, and what evidence was superseded?">
+            ⚠️ Why is this decision stale?
+          </button>
+          <button class="copilot-chip-btn" data-query="Who should I ask about the ledger and billing systems?">
+            👥 Who needs to review this?
+          </button>
+          <button class="copilot-chip-btn" data-query="Draft a reversal plan for the billing queue migration">
+            📋 Draft verification checklist
+          </button>
+        </div>
+      </div>
+
+      <!-- Messages Stream -->
+      <div class="copilot-messages" id="copilot-messages"></div>
+    </div>
+
+    <!-- Copilot Input Form -->
+    <form class="copilot-input-form" id="copilot-form" autocomplete="off">
+      <input type="text" id="copilot-input" class="copilot-input" maxlength="400" placeholder="Ask why, who, what breaks, or request a checklist..." required>
+      <button type="submit" class="copilot-submit-btn" id="copilot-submit" title="Send Question">
+        <span>Ask</span> ⚡
+      </button>
+    </form>
+  </aside>
 
   <!-- Toast Notification -->
   <div id="lab-toast" class="impact-lab-toast" hidden></div>

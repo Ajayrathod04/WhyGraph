@@ -28,7 +28,7 @@ Take FalkorDB away and the product does not start. There is no second data store
 
 All Cypher lives in [`whygraph/queries.py`](whygraph/queries.py). Values are always passed as parameters; user or document text is never concatenated into a query.
 
-## Impact Lab: Change Simulation Studio
+## Impact Lab & RECALL Copilot: Change Simulation Studio
 
 In addition to the main knowledge graph browser, WhyGraph features **Impact Lab** (`http://127.0.0.1:8000/impact-lab.html` or accessible via `Impact Lab ↗` in the top header). Impact Lab is a dedicated simulation studio built with retro-futuristic bento-grid aesthetics to answer:
 *"Simulate a change. See what breaks, why it breaks, and who must review it — before the change ships."*
@@ -37,10 +37,13 @@ In addition to the main knowledge graph browser, WhyGraph features **Impact Lab*
   1. *Billing Queue Migration Reversal* (`d_queue` → `s_billing`, `s_bus`)
   2. *Fraud Vendor Evidence Invalidation* (`doc_vendor1` superseded by `doc_vendor2` → `d_fraudvendor`)
   3. *Live ADR-031 Ingestion & Task Handoff* (`ADR-031 Capacity Study` auto-spawns an Archivist → Analyst `:Task` handoff)
-- **Deep Graph Traversal**: Computes multi-hop blast radius paths (`DEPENDS_ON*1..4`), FalkorDB native PageRank centrality (`algo.pageRank`), accountable owners, and stale evidence chains.
+- **Deep Graph Traversal & Canvas**: Interactive SVG canvas with zoom, pan, fit-to-view, accessible textual alternative, multi-hop blast radius paths (`DEPENDS_ON*1..4`), FalkorDB native PageRank centrality (`algo.pageRank`), accountable owners, and stale evidence chains.
+- **RECALL Copilot (3D Robot Assistant)**: A distinctive, friendly 3D robot character inspired by Y2K aesthetics that answers questions directly from the graph. When offline, it serves deterministic graph facts, source citations, and query receipts; when configured with `LLM_API_KEY`, it phrases responses while strictly maintaining graph grounding.
 - **Safe Human-in-the-Loop Action**: Drafts a graph-backed `ChangeRequest` with strict verification checklists without mutating external infrastructure.
 
 ## How it covers the three tracks
+
+> For the comprehensive evaluation matrix with exact reproducible test commands, observed results, and limitations, see [`docs/ALL_TRACKS_EVIDENCE.md`](docs/ALL_TRACKS_EVIDENCE.md).
 
 | Track | Track Brief | WhyGraph Implementation | Load-Bearing FalkorDB Queries & Proof |
 |---|---|---|---|

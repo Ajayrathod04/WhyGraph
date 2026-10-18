@@ -1,6 +1,6 @@
 /* ==========================================================================
-   WhyGraph / RECALL — Impact Lab JavaScript
-   Change Simulation, Blast Radius Traversal & Evidence Inspector
+   WhyGraph / RECALL — Impact Lab & RECALL Copilot Controller
+   Change Simulation, Blast Radius Traversal & 3D Robot AI Assistant
    Powered 100% by live FalkorDB APIs
    ========================================================================== */
 
@@ -18,6 +18,11 @@
     graph: { nodes: [], edges: [], nodeMap: {} },
     selectedNode: null,
     busy: false,
+    zoom: 1,
+    pan: { x: 0, y: 0 },
+    isDragging: false,
+    dragStart: { x: 0, y: 0 },
+    highlight: { nodes: [], edges: [] },
   };
 
   const NODE_COLORS = {
@@ -61,6 +66,8 @@
   // ------------------------------------------------------------------ Init
   async function init() {
     setupEventListeners();
+    setupCanvasControls();
+    setupCopilot();
     await checkHealth();
     await runSelectedScenario();
   }
@@ -113,6 +120,12 @@
           setBusy(false);
         }
       });
+    }
+
+    // Open copilot from control panel
+    const openCopilotBtn = $('#btn-open-copilot-bar');
+    if (openCopilotBtn) {
+      openCopilotBtn.addEventListener('click', () => openCopilot());
     }
   }
 
@@ -170,6 +183,7 @@
     const staleRes = await api(`/api/tasks?tenant=${STATE.tenant}`);
 
     updateGraphData(graphRes);
+    STATE.highlight = askRes.highlight || { nodes: [], edges: [] };
 
     // 1. Trigger
     $('#trig-status').textContent = 'Active Decision Under Review';
@@ -210,8 +224,9 @@
       body: askRes.evidence || 'Verify idempotency and rollback queue parameters.',
     });
 
-    // 6. Canvas
-    renderCanvas(graphRes, askRes.highlight || { nodes: [], edges: [] });
+    // 6. Canvas & Text Alternative
+    renderCanvas(graphRes, STATE.highlight);
+    renderTextAlt(graphRes, STATE.highlight);
 
     // 7. Receipts
     renderReceipts(askRes.receipts || []);
@@ -225,6 +240,7 @@
     const staleRes = await api(`/api/tasks?tenant=${STATE.tenant}`);
 
     updateGraphData(graphRes);
+    STATE.highlight = askRes.highlight || { nodes: [], edges: [] };
 
     // 1. Trigger
     $('#trig-status').textContent = 'Stale / Superseded Evidence';
@@ -261,13 +277,13 @@
       body: 'Evaluate Fraud Scoring API v2 deployment on Payments Gateway and Fraud Engine. Retract reliance on v1 benchmarks.',
     });
 
-    renderCanvas(graphRes, askRes.highlight || { nodes: [], edges: [] });
+    renderCanvas(graphRes, STATE.highlight);
+    renderTextAlt(graphRes, STATE.highlight);
     renderReceipts(askRes.receipts || []);
   }
 
   // ---- Scenario 3: Live ADR Ingestion & Task Handoff ----
   async function executeAdrIngestionSimulation() {
-    // Ingest sample ADR document
     const sampleDoc = `Title: ADR-031 Queue Capacity Study v2
 Kind: ADR
 Replaces: ADR-014 Queue Capacity Study
@@ -277,7 +293,6 @@ Affects: Billing Service, Event Bus
 Rationale: The first study was measured on retired hardware, so its numbers no longer hold.`;
 
     await api('/api/ingest', { tenant: STATE.tenant, text: sampleDoc });
-    // Trigger 2-agent handoff pass
     await api('/api/agents/run', { tenant: STATE.tenant });
 
     const graphRes = await api(`/api/graph?tenant=${STATE.tenant}`);
@@ -303,13 +318,8 @@ Rationale: The first study was measured on retired hardware, so its numbers no l
       </div>
     `;
 
-    // Render systems
     const systems = graphRes.nodes.filter(n => n.label === 'System');
-    renderSystemTable(systems.slice(0, 5), [
-      { id: 's_billing', hops: 1, pr: 0.18, crit: 'Critical' },
-      { id: 's_bus', hops: 1, pr: 0.16, crit: 'Critical' },
-      { id: 's_ledger', hops: 2, pr: 0.22, crit: 'Highest' },
-    ]);
+    renderSystemTable(systems.slice(0, 5));
 
     renderOwners({ target: {} }, graphRes);
     renderStale(staleRes);
@@ -320,11 +330,11 @@ Rationale: The first study was measured on retired hardware, so its numbers no l
     };
     renderPlan(latestChange);
 
-    // Highlight Task and ChangeRequest nodes
     const tNodes = graphRes.nodes.filter(n => n.label === 'Task' || n.label === 'ChangeRequest').map(n => n.id);
-    renderCanvas(graphRes, { nodes: tNodes, edges: [] });
+    STATE.highlight = { nodes: tNodes, edges: [] };
+    renderCanvas(graphRes, STATE.highlight);
+    renderTextAlt(graphRes, STATE.highlight);
 
-    // Mock receipts for ingest + handoff
     renderReceipts([
       { name: 'ingest: write document & supersedes', cypher: 'MATCH (old:Document {id: $replaces}) CREATE (d:Document)...-[:SUPERSEDES]->(old)', ms: 8, rows: 1 },
       { name: 'archivist: detect stale decisions', cypher: 'MATCH (d:Decision)-[:SUPPORTED_BY]->(old:Document)<-[:SUPERSEDES]-(new) SET d.status = "needs_update"', ms: 6, rows: 2 },
@@ -345,7 +355,6 @@ Rationale: The first study was measured on retired hardware, so its numbers no l
     const systems = graphRes.nodes.filter(n => n.label === 'System');
     const highlighted = new Set(askRes.highlight ? askRes.highlight.nodes : []);
     
-    // Sort systems: highlighted first
     const rows = systems.map(s => {
       const isHl = highlighted.has(s.id);
       return {
@@ -451,10 +460,77 @@ Rationale: The first study was measured on retired hardware, so its numbers no l
     if (countEl) countEl.textContent = `${(receipts || []).length} Graph Queries`;
   }
 
-  // ------------------------------------------------------------------ Canvas Visualizer
+  function renderTextAlt(graph, highlight) {
+    const list = $('#text-alt-list');
+    if (!list) return;
+    list.innerHTML = '';
+    const hlNodes = new Set((highlight && highlight.nodes) || []);
+    const nodes = graph.nodes || [];
+    nodes.slice(0, 15).forEach(n => {
+      const li = document.createElement('li');
+      const isHl = hlNodes.has(n.id);
+      li.innerHTML = `<strong>${esc(n.name)}</strong> (${esc(n.label)}) - ID: <code>${esc(n.id)}</code> ${isHl ? '<span style="color:var(--lab-cyan)">[Highlighted in Blast Path]</span>' : ''}`;
+      list.appendChild(li);
+    });
+  }
+
+  // ------------------------------------------------------------------ Canvas Visualizer & Controls
+  function setupCanvasControls() {
+    const canvas = $('#lab-canvas');
+    const zoomIn = $('#btn-zoom-in');
+    const zoomOut = $('#btn-zoom-out');
+    const zoomReset = $('#btn-zoom-reset');
+    const zoomFit = $('#btn-zoom-fit');
+    const textToggle = $('#btn-toggle-text-alt');
+
+    if (zoomIn) zoomIn.addEventListener('click', () => { STATE.zoom = Math.min(3, STATE.zoom * 1.25); updateCanvasTransform(); });
+    if (zoomOut) zoomOut.addEventListener('click', () => { STATE.zoom = Math.max(0.4, STATE.zoom / 1.25); updateCanvasTransform(); });
+    if (zoomReset) zoomReset.addEventListener('click', () => { STATE.zoom = 1; STATE.pan = { x: 0, y: 0 }; updateCanvasTransform(); });
+    if (zoomFit) zoomFit.addEventListener('click', () => { STATE.zoom = 0.95; STATE.pan = { x: 0, y: 0 }; updateCanvasTransform(); });
+
+    if (textToggle) {
+      textToggle.addEventListener('click', () => {
+        const alt = $('#canvas-text-alt');
+        if (!alt) return;
+        alt.hidden = !alt.hidden;
+        textToggle.textContent = alt.hidden ? 'Accessible Table View' : 'Hide Accessible Table';
+      });
+    }
+
+    // Pan Dragging
+    if (canvas) {
+      canvas.addEventListener('mousedown', (e) => {
+        STATE.isDragging = true;
+        STATE.dragStart = { x: e.clientX - STATE.pan.x, y: e.clientY - STATE.pan.y };
+        canvas.style.cursor = 'grabbing';
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if (!STATE.isDragging) return;
+        STATE.pan.x = e.clientX - STATE.dragStart.x;
+        STATE.pan.y = e.clientY - STATE.dragStart.y;
+        updateCanvasTransform();
+      });
+
+      window.addEventListener('mouseup', () => {
+        STATE.isDragging = false;
+        if (canvas) canvas.style.cursor = 'grab';
+      });
+    }
+  }
+
+  function updateCanvasTransform() {
+    const container = $('#lab-zoom-container');
+    if (container) {
+      container.setAttribute('transform', `translate(${STATE.pan.x}, ${STATE.pan.y}) scale(${STATE.zoom})`);
+    }
+  }
+
   function renderCanvas(graph, highlight) {
     const edgesLayer = $('#lab-edges-layer');
     const nodesLayer = $('#lab-nodes-layer');
+    if (!edgesLayer || !nodesLayer) return;
+
     edgesLayer.innerHTML = '';
     nodesLayer.innerHTML = '';
 
@@ -464,18 +540,17 @@ Rationale: The first study was measured on retired hardware, so its numbers no l
 
     if (nodes.length === 0) return;
 
-    // Arrange nodes in concentric rings by label
     const pos = {};
     const center = { x: 0, y: 0 };
     const radiusMap = {
-      Decision: 90,
-      System: 170,
-      Task: 120,
-      ChangeRequest: 120,
-      Document: 230,
-      Person: 250,
-      Team: 270,
-      Project: 240,
+      Decision: 95,
+      System: 175,
+      Task: 130,
+      ChangeRequest: 130,
+      Document: 240,
+      Person: 260,
+      Team: 280,
+      Project: 250,
     };
 
     const grouped = {};
@@ -486,7 +561,7 @@ Rationale: The first study was measured on retired hardware, so its numbers no l
 
     Object.keys(grouped).forEach(lbl => {
       const list = grouped[lbl];
-      const r = radiusMap[lbl] || 200;
+      const r = radiusMap[lbl] || 210;
       list.forEach((n, i) => {
         const theta = (2 * Math.PI * i) / list.length + (lbl.charCodeAt(0) * 0.1);
         pos[n.id] = {
@@ -509,8 +584,8 @@ Rationale: The first study was measured on retired hardware, so its numbers no l
       line.setAttribute('x2', p2.x);
       line.setAttribute('y2', p2.y);
       line.setAttribute('stroke', isHl ? '#3df2c8' : '#222f6d');
-      line.setAttribute('stroke-width', isHl ? '2.5' : '1');
-      line.setAttribute('stroke-opacity', isHl ? '0.9' : '0.4');
+      line.setAttribute('stroke-width', isHl ? '2.8' : '1');
+      line.setAttribute('stroke-opacity', isHl ? '0.95' : '0.4');
       line.setAttribute('marker-end', isHl ? 'url(#lab-arrow-hl)' : 'url(#lab-arrow)');
       edgesLayer.appendChild(line);
     });
@@ -528,17 +603,17 @@ Rationale: The first study was measured on retired hardware, so its numbers no l
 
       // Circle
       const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      circle.setAttribute('r', isHl ? '12' : '8');
+      circle.setAttribute('r', isHl ? '13' : '8.5');
       circle.setAttribute('fill', color);
       circle.setAttribute('stroke', isHl ? '#ffffff' : '#070814');
       circle.setAttribute('stroke-width', isHl ? '2.5' : '1.5');
       if (isHl) {
-        circle.style.filter = `drop-shadow(0 0 8px ${color})`;
+        circle.style.filter = `drop-shadow(0 0 10px ${color})`;
       }
 
       // Label text
       const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      text.setAttribute('y', isHl ? '22' : '18');
+      text.setAttribute('y', isHl ? '24' : '19');
       text.setAttribute('text-anchor', 'middle');
       text.setAttribute('fill', isHl ? '#ffffff' : '#7f90c8');
       text.setAttribute('font-size', isHl ? '11px' : '9px');
@@ -552,6 +627,8 @@ Rationale: The first study was measured on retired hardware, so its numbers no l
       g.addEventListener('click', () => inspectNode(n.id));
       nodesLayer.appendChild(g);
     });
+
+    updateCanvasTransform();
   }
 
   async function inspectNode(nodeId) {
@@ -574,6 +651,148 @@ Rationale: The first study was measured on retired hardware, so its numbers no l
     } catch (e) {
       inspector.innerHTML = `<span style="color:var(--lab-pink)">Error fetching node: ${esc(e.message)}</span>`;
     }
+  }
+
+  // ------------------------------------------------------------------ RECALL COPILOT & 3D ROBOT
+  function setupCopilot() {
+    const launcher = $('#copilot-launcher');
+    const drawer = $('#copilot-drawer');
+    const closeBtn = $('#copilot-close-btn');
+    const form = $('#copilot-form');
+    const input = $('#copilot-input');
+    const stage = $('#robot-3d-stage');
+    const head = $('#robot-head-group');
+
+    if (launcher) launcher.addEventListener('click', () => openCopilot());
+    if (closeBtn) closeBtn.addEventListener('click', () => closeCopilot());
+
+    // Suggested Chips
+    $$('.copilot-chip-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const q = btn.getAttribute('data-query');
+        if (q) askCopilot(q);
+      });
+    });
+
+    // Form submit
+    if (form) {
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const text = (input && input.value || '').trim();
+        if (text) {
+          input.value = '';
+          askCopilot(text);
+        }
+      });
+    }
+
+    // 3D Robot Head Tracking Cursor Movement
+    if (stage && head) {
+      window.addEventListener('mousemove', (e) => {
+        if (drawer && drawer.hidden) return;
+        const rect = stage.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const deltaX = (e.clientX - centerX) / (window.innerWidth / 2);
+        const deltaY = (e.clientY - centerY) / (window.innerHeight / 2);
+
+        const rotY = Math.max(-20, Math.min(20, deltaX * 22));
+        const rotX = Math.max(-15, Math.min(15, -deltaY * 18));
+
+        head.style.transform = `rotateY(${rotY.toFixed(1)}deg) rotateX(${rotX.toFixed(1)}deg)`;
+      });
+    }
+  }
+
+  function openCopilot() {
+    const drawer = $('#copilot-drawer');
+    if (!drawer) return;
+    drawer.hidden = false;
+    const input = $('#copilot-input');
+    if (input) setTimeout(() => input.focus(), 200);
+  }
+
+  function closeCopilot() {
+    const drawer = $('#copilot-drawer');
+    if (drawer) drawer.hidden = true;
+  }
+
+  async function askCopilot(question) {
+    openCopilot();
+    const messages = $('#copilot-messages');
+    const welcome = $('#copilot-welcome');
+    if (welcome) welcome.style.display = 'none';
+
+    // 1. Append User Message
+    const userMsg = document.createElement('div');
+    userMsg.className = 'copilot-msg user';
+    userMsg.textContent = question;
+    messages.appendChild(userMsg);
+    messages.scrollTop = messages.scrollHeight;
+
+    // 2. Animate Robot (Thinking)
+    const head = $('#robot-head-group');
+    if (head) head.style.filter = 'drop-shadow(0 0 12px #3df2c8)';
+
+    // 3. Loading Indicator
+    const botMsg = document.createElement('div');
+    botMsg.className = 'copilot-msg bot';
+    botMsg.innerHTML = '<span style="color:var(--lab-cyan);font-family:var(--lab-font-mono);">⚡ Walking FalkorDB graph...</span>';
+    messages.appendChild(botMsg);
+    messages.scrollTop = messages.scrollHeight;
+
+    try {
+      const res = await api('/api/ask', { tenant: STATE.tenant, question: question });
+      if (head) head.style.filter = 'none';
+
+      // Highlight path on main graph
+      if (res.highlight && res.highlight.nodes && res.highlight.nodes.length > 0) {
+        STATE.highlight = res.highlight;
+        renderCanvas(STATE.graph, STATE.highlight);
+      }
+
+      // Format grounded answer
+      const mode = res.phrased_by || 'graph facts';
+      const receipts = res.receipts || [];
+      const ms = res.ms || 12;
+
+      let receiptsHtml = '';
+      if (receipts.length > 0) {
+        receiptsHtml = `
+          <details style="margin-top:8px;font-family:var(--lab-font-mono);font-size:0.7rem;">
+            <summary style="cursor:pointer;color:var(--lab-yellow);">${receipts.length} FalkorDB Query Receipts (${ms}ms)</summary>
+            <div style="background:#05081a;padding:8px;border-radius:4px;margin-top:4px;max-height:80px;overflow-y:auto;white-space:pre-wrap;color:#a0b4e8;">
+              ${receipts.map(r => `[${esc(r.name)}] ${esc(r.cypher)} (${r.ms}ms)`).join('\n')}
+            </div>
+          </details>
+        `;
+      }
+
+      const cites = res.target ? [res.target.decision, res.target.system].filter(Boolean) : [];
+      let citesHtml = '';
+      if (cites.length > 0) {
+        citesHtml = `
+          <div class="copilot-citations">
+            ${cites.map(c => `<span class="copilot-cite-pill">[${esc(c.id || c.name || c.title)}]</span>`).join('')}
+          </div>
+        `;
+      }
+
+      botMsg.innerHTML = `
+        <div class="copilot-msg-meta">
+          <span>RECALL Copilot</span>
+          <span class="mode-pill">${esc(mode)}</span>
+        </div>
+        <div style="color:#ffffff;">${esc(res.answer || res.evidence)}</div>
+        ${citesHtml}
+        ${receiptsHtml}
+      `;
+    } catch (err) {
+      if (head) head.style.filter = 'none';
+      botMsg.innerHTML = `<span style="color:var(--lab-pink)">Error querying FalkorDB: ${esc(err.message)}</span>`;
+    }
+
+    messages.scrollTop = messages.scrollHeight;
   }
 
   // Run on DOM loaded
