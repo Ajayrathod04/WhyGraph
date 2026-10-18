@@ -28,13 +28,25 @@ Take FalkorDB away and the product does not start. There is no second data store
 
 All Cypher lives in [`whygraph/queries.py`](whygraph/queries.py). Values are always passed as parameters; user or document text is never concatenated into a query.
 
+## Impact Lab: Change Simulation Studio
+
+In addition to the main knowledge graph browser, WhyGraph features **Impact Lab** (`http://127.0.0.1:8000/impact-lab.html` or accessible via `Impact Lab ↗` in the top header). Impact Lab is a dedicated simulation studio built with retro-futuristic bento-grid aesthetics to answer:
+*"Simulate a change. See what breaks, why it breaks, and who must review it — before the change ships."*
+
+- **Deterministic Scenarios**:
+  1. *Billing Queue Migration Reversal* (`d_queue` → `s_billing`, `s_bus`)
+  2. *Fraud Vendor Evidence Invalidation* (`doc_vendor1` superseded by `doc_vendor2` → `d_fraudvendor`)
+  3. *Live ADR-031 Ingestion & Task Handoff* (`ADR-031 Capacity Study` auto-spawns an Archivist → Analyst `:Task` handoff)
+- **Deep Graph Traversal**: Computes multi-hop blast radius paths (`DEPENDS_ON*1..4`), FalkorDB native PageRank centrality (`algo.pageRank`), accountable owners, and stale evidence chains.
+- **Safe Human-in-the-Loop Action**: Drafts a graph-backed `ChangeRequest` with strict verification checklists without mutating external infrastructure.
+
 ## How it covers the three tracks
 
-| Track | Brief (from the event page) | In WhyGraph |
-|---|---|---|
-| 01 Act on connected data | multi-hop reasoning, algorithms as tools, explainable results | variable-length paths, PageRank ranking, shortest dependency chain; the `plan` action writes a `ChangeRequest`; every answer ships its Cypher receipt |
-| 02 Memory and coordination | episodic/semantic/procedural memory, shared state and hand-offs, separate memory per tenant | `Question` nodes (episodic) bias later entity resolution; the knowledge graph is semantic memory; `Playbook` nodes drive tool order (procedural); `Task` nodes are the hand-off channel; one graph per team |
-| 03 Company Brain | decisions traced to source, who owns/knows what, knowledge kept current, answers with sources | `Decision -> Document` evidence, `OWNS`/`KNOWS` edges, an ingest flow that marks superseded documents and surfaces stale decisions, `[source]` tags on every claim |
+| Track | Track Brief | WhyGraph Implementation | Load-Bearing FalkorDB Queries & Proof |
+|---|---|---|---|
+| **Track 01: Agents That Act on Connected Data** | Multi-hop reasoning, graph algorithms as tools, explainable actions | Typed tool registry (`trace`, `stale_check`, `who_knows`, `impact`, `pagerank`, `shortest_path`, `plan`). Multi-hop traversals and native PageRank directly determine affected systems and priority. Action drafts (`ChangeRequest`) require human sign-off. *(Limitation: Tool calling runs natively via parameterized Cypher; external MCP server is not implemented).* | `CALL algo.pageRank('System', 'DEPENDS_ON') YIELD node, score`<br>`MATCH p = shortestPath((a:System)-[:DEPENDS_ON*]->(b:System))`<br>`MATCH (s:System)-[:DEPENDS_ON*1..4]->(dep:System)` |
+| **Track 02: Agent Memory & Coordination** | Episodic, semantic, and procedural memory; shared state and agent handoffs; tenant isolation | `Question` nodes (episodic memory), knowledge graph (semantic facts), `Playbook` nodes (procedural memory sequence). Two cooperating agents (**Analyst** & **Archivist**) coordinate exclusively through state-machine `:Task` nodes in FalkorDB (`open` → `recheck` → `done`). Strict tenant isolation between `team_lumen` and `team_orbit`. | `CREATE (:Question {id, text, intent, ts})-[:VIEWED]->(d)`<br>`MATCH (pb:Playbook {id: $id}) RETURN pb.steps`<br>`CREATE (:Task {stage: 'assess', assignee: 'analyst'})-[:ABOUT]->(:Decision)` |
+| **Track 03: Company Brain (Primary)** | Decisions traced to source evidence, ownership mapping, stale evidence detection, auditable receipts | Complete organizational memory connecting documents, decisions, services, and teams. Ingesting revised ADRs automatically propagates supersession and flags dependent decisions as stale. Every factual claim includes clickable node citations and exact Cypher query receipts. | `MATCH (d:Decision)-[:SUPPORTED_BY]->(old:Document)<-[:SUPERSEDES]-(new:Document)`<br>`MATCH (d:Decision)-[:DECIDED_BY]->(p:Person)-[:MEMBER_OF]->(t:Team)`<br>`MATCH (t:Team)-[:OWNS]->(s:System)` |
 
 ## Quick start
 
@@ -130,7 +142,7 @@ Full diagram in the docstring at the top of `whygraph/queries.py`.
 
 ## AI assistance disclosure
 
-The initial code, synthetic seed data, UI and documentation were produced with the help of **Claude (Anthropic)** working from the author's specification. System environment recovery, cloud deployment configuration (FalkorDB Cloud, Render), error-handling hardening, and live end-to-end FalkorDB verification were performed with **Antigravity (Google DeepMind)**. The author reviewed, tested, verified all queries against live FalkorDB, and is responsible for the project.
+The initial code, synthetic seed data, UI and documentation were produced with the help of **Claude (Anthropic)** working from the author's specification. System environment recovery, live FalkorDB integration testing, browser E2E test verification, test hardening, and the additive **Impact Lab** change simulation studio (`/impact-lab.html`) were designed and verified with **Antigravity (Google DeepMind)**. The author reviewed, tested, verified all queries against live FalkorDB, and is responsible for the project.
 
 ## Data statement
 

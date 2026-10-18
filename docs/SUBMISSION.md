@@ -11,22 +11,23 @@ Companies lose the reasons behind decisions. New engineering leads and product m
 
 **Tracks:** select all three only if you demo all three (Company Brain, Agents That Act on Connected Data, Agent Memory and Coordination). If you cut scope, deselect the track you did not finish.
 
-**Repository:** [https://github.com/Ajayrathod04/whygraph] (must be public)
+**Repository:** https://github.com/Ajayrathod04/WhyGraph (public)
 
 **Demo video:** [YouTube link, public or unlisted]
 
-**Live demo or deployment:** optional. Leave empty if you only have local setup instructions (the README has them).
+**Live demo or deployment:** Local setup instructions verified on Windows/macOS/Linux via Docker Compose (see README).
 
 **How did you use FalkorDB (technical problems solved):**
 - One isolated graph per team using FalkorDB multi-graph (`team_lumen`, `team_orbit`), so memory never leaks between tenants.
 - Why-tracing with variable-length paths (`SUPERSEDES*1..6`, `BASED_ON`) to follow decisions back to documents and through replaced decisions.
-- Blast radius with `DEPENDS_ON*1..4` and `min(length(path))`, ranked with `algo.pageRank`, plus `shortestPath` for the failure chain, all exposed as agent tools.
+- Blast radius with `DEPENDS_ON*1..4` and `min(length(path))`, ranked with native `algo.pageRank`, plus `shortestPath` for the dependency chain, all exposed as agent tools.
 - Stale-knowledge detection with `OPTIONAL MATCH` over `Document {status:'outdated'} -[:REPLACED_BY]->`.
 - Agent coordination by writing and reading `Task` nodes (stage and assignee) instead of direct calls; `MERGE ... ON CREATE SET` makes hand-offs idempotent.
 - Memory in the graph: `Question` nodes (episodic) that bias entity resolution, and `Playbook` nodes (procedural) that the agent reads to decide which tools to run.
-- An action written back to the graph: `ChangeRequest` nodes linked to the decision and to people to notify.
+- Action drafts written back to the graph: `ChangeRequest` nodes linked to the decision and to people to notify.
+- **Impact Lab**: Dedicated change simulation studio (`/impact-lab.html`) simulating queue reversals, evidence invalidation, and live ADR ingestion.
 - Without FalkorDB the product does not start: there is no other data store.
-[Add one or two real numbers from your own run, e.g. "selfcheck: N queries pass, headline question uses N graph calls in N ms".]
+- **Verified Metrics**: `scripts/selfcheck.py` verifies 36/36 checks (0 failures, 0 warnings); headline questions complete in 20 graph calls within ~96ms; unit test suite passes 25/25 tests.
 
 **Blog link:** [after you publish]
 

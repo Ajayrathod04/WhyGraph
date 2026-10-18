@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WhyGraph / RECALL — Impact Lab</title>
+  <meta name="description" content="Simulate architectural and vendor changes. See what breaks, why it breaks, and who must review it — grounded in FalkorDB graph traversals and algorithms.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;600&family=Unbounded:wght@600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/impact-lab.css">
+</head>
+<body class="impact-lab-body">
+  <header class="impact-lab-header">
+    <div class="impact-lab-brand-container">
+      <div class="impact-lab-logo-box">
+        <svg viewBox="0 0 40 40" aria-hidden="true" class="impact-lab-logo-svg">
+          <rect x="2" y="2" width="36" height="36" rx="10" fill="#12193b" stroke="#3df2c8" stroke-width="2.5"/>
+          <path d="M10 14 L16 28 L20 19 L24 28 L30 14" fill="none" stroke="#ffd83d" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="30" cy="14" r="3.2" fill="#ff3d9a" stroke="#ffffff" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <div>
+        <div class="impact-lab-title">
+          <span>WhyGraph</span> <span class="impact-lab-accent">/ IMPACT LAB</span>
+          <span class="impact-lab-badge-pulse">SIMULATION STUDIO</span>
+        </div>
+        <div class="impact-lab-subtitle">Simulate a change &bull; Trace the blast radius &bull; Discover what breaks before it ships</div>
+      </div>
+    </div>
+
+    <!-- Navigation & Switchers -->
+    <div class="impact-lab-nav-actions">
+      <div class="impact-lab-tenant-selector" id="lab-tenants" role="tablist" aria-label="Tenant Selection">
+        <button class="impact-lab-tenant-btn active" data-tenant="lumen">Lumen Payments</button>
+        <button class="impact-lab-tenant-btn" data-tenant="orbit">Orbit Logistics</button>
+      </div>
+
+      <div class="impact-lab-status-cluster">
+        <span class="impact-lab-pill live" id="lab-db-pill" title="FalkorDB Primary Graph Connection">
+          <span class="impact-lab-dot"></span> FalkorDB Live (:6379)
+        </span>
+        <a href="http://localhost:3000" target="_blank" rel="noopener noreferrer" class="impact-lab-pill browser-link" title="Open FalkorDB Browser UI">
+          Browser :3000 ↗
+        </a>
+        <a href="/" class="impact-lab-btn-back">← Main Brain</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Track Demo Showcase Bar -->
+  <section class="impact-lab-track-banner" aria-label="Hackathon Track Criteria Showcase">
+    <div class="impact-lab-track-item" data-track="03">
+      <div class="impact-lab-track-tag primary">TRACK 03 &bull; PRIMARY</div>
+      <div class="impact-lab-track-head">Company Brain</div>
+      <div class="impact-lab-track-desc">Traces decisions to evidence, detects superseded sources, computes ownership blast radius across services.</div>
+    </div>
+    <div class="impact-lab-track-item" data-track="01">
+      <div class="impact-lab-track-tag">TRACK 01 &bull; AGENTS ON CONNECTED DATA</div>
+      <div class="impact-lab-track-head">Graph-Driven Tools</div>
+      <div class="impact-lab-track-desc">Agent tool loop calling real FalkorDB Cypher, <code>algo.pageRank</code>, <code>shortestPath</code> &amp; drafting human-review plans.</div>
+    </div>
+    <div class="impact-lab-track-item" data-track="02">
+      <div class="impact-lab-track-tag">TRACK 02 &bull; MEMORY &amp; COORDINATION</div>
+      <div class="impact-lab-track-head">Agent Memory &amp; Handoffs</div>
+      <div class="impact-lab-track-desc">FalkorDB episodic questions, procedural playbooks, and state-machine <code>:Task</code> handoffs between Analyst &amp; Archivist.</div>
+    </div>
+  </section>
+
+  <main class="impact-lab-main">
+    <!-- Simulation Scenario Selector -->
+    <section class="impact-lab-control-panel">
+      <div class="impact-lab-scenario-header">
+        <div>
+          <h2 class="impact-lab-heading">1. Select Incident Simulation</h2>
+          <p class="impact-lab-lede">Deterministic, judge-ready scenarios executed against real FalkorDB graph nodes.</p>
+        </div>
+        <div class="impact-lab-synthetic-tag">SYNTHETIC BENCHMARK DATA &bull; ZERO EXTERNAL SECRETS</div>
+      </div>
+
+      <div class="impact-lab-scenarios-grid">
+        <!-- Scenario 1 -->
+        <button class="impact-lab-scenario-card active" id="btn-scenario-1" data-id="scenario_queue">
+          <div class="impact-lab-scenario-pill warn">INCIDENT SIMULATION</div>
+          <div class="impact-lab-scenario-title">Billing Queue Migration Reversal</div>
+          <div class="impact-lab-scenario-summary">Simulate rolling back the Billing Service to the legacy RabbitMQ queue. Traces blast radius, Kafka dependencies, and idempotency guarantees.</div>
+          <div class="impact-lab-scenario-meta">
+            <span>Target: <code>d_queue</code></span>
+            <span>Affects: <code>s_billing</code>, <code>s_bus</code></span>
+          </div>
+        </button>
+
+        <!-- Scenario 2 -->
+        <button class="impact-lab-scenario-card" id="btn-scenario-2" data-id="scenario_fraud">
+          <div class="impact-lab-scenario-pill alert">STALE EVIDENCE PROPAGATION</div>
+          <div class="impact-lab-scenario-title">Fraud Vendor Evidence Invalidation</div>
+          <div class="impact-lab-scenario-summary">Vendor Review v2 supersedes v1. Traces the ripple effect to identify invalid fraud scoring decisions and impacted payment checkout paths.</div>
+          <div class="impact-lab-scenario-meta">
+            <span>Target: <code>d_fraudvendor</code></span>
+            <span>Supersedes: <code>doc_vendor1</code></span>
+          </div>
+        </button>
+
+        <!-- Scenario 3 -->
+        <button class="impact-lab-scenario-card" id="btn-scenario-3" data-id="scenario_adr">
+          <div class="impact-lab-scenario-pill cyan">LIVE ADR INGESTION &amp; HANDOFF</div>
+          <div class="impact-lab-scenario-title">Ingest ADR-031 Capacity Study</div>
+          <div class="impact-lab-scenario-summary">Simulate new architecture document ingestion. Spawns an Archivist &rarr; Analyst <code>:Task</code> node handoff in the shared graph.</div>
+          <div class="impact-lab-scenario-meta">
+            <span>Doc: <code>ADR-031 Capacity v2</code></span>
+            <span>Handoff: <code>Task: d_queue</code></span>
+          </div>
+        </button>
+      </div>
+
+      <div class="impact-lab-action-bar">
+        <button class="impact-lab-btn-run" id="btn-run-simulation">
+          <span class="impact-lab-btn-icon">⚡</span> Execute Simulation on FalkorDB
+        </button>
+        <button class="impact-lab-btn-secondary" id="btn-reset-demo">
+          ↻ Reset Graph State
+        </button>
+        <span class="impact-lab-execution-stats" id="lab-stats">Ready to simulate. Select a scenario above.</span>
+      </div>
+    </section>
+
+    <!-- Bento Grid Results Layout -->
+    <section class="impact-lab-bento" id="lab-results-container">
+      
+      <!-- Card 1: Trigger & Evidence -->
+      <article class="impact-lab-card card-trigger">
+        <div class="impact-lab-card-header">
+          <span class="impact-lab-card-num">01</span>
+          <h3 class="impact-lab-card-title">Trigger &amp; Supporting Evidence</h3>
+          <span class="impact-lab-chip-status" id="trig-status">Active</span>
+        </div>
+        <div class="impact-lab-card-body">
+          <div class="impact-lab-entity-box" id="trig-entity-box">
+            <div class="impact-lab-entity-title" id="trig-title">Move billing off the legacy queue onto the event bus</div>
+            <div class="impact-lab-entity-sub" id="trig-id">Decision ID: d_queue &bull; Date: 2026-02-10</div>
+            <div class="impact-lab-rationale" id="trig-rationale">The legacy queue saturates under projected peak load and caused duplicate charges.</div>
+          </div>
+          <div class="impact-lab-source-lineage" id="trig-lineage">
+            <div class="impact-lab-label">Source Evidence &amp; Supersession Chain:</div>
+            <div class="impact-lab-evidence-list" id="trig-sources">
+              <!-- populated by JS -->
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- Card 2: Interactive Dependency Canvas -->
+      <article class="impact-lab-card card-canvas">
+        <div class="impact-lab-card-header">
+          <span class="impact-lab-card-num">02</span>
+          <h3 class="impact-lab-card-title">Graph Traversal &amp; Blast Radius Path</h3>
+          <span class="impact-lab-chip-tag" id="canvas-node-count">0 nodes</span>
+        </div>
+        <div class="impact-lab-canvas-wrapper" id="canvas-wrapper">
+          <svg class="impact-lab-svg-canvas" id="lab-canvas" viewBox="-400 -250 800 500">
+            <defs>
+              <marker id="lab-arrow" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M 0 1 L 9 5 L 0 9 z" fill="#4d5c9e"/>
+              </marker>
+              <marker id="lab-arrow-hl" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M 0 1 L 9 5 L 0 9 z" fill="#3df2c8"/>
+              </marker>
+            </defs>
+            <g id="lab-edges-layer"></g>
+            <g id="lab-nodes-layer"></g>
+          </svg>
+          <div class="impact-lab-canvas-legend">
+            <span class="leg-item"><i class="leg-dot c-dec"></i> Decision</span>
+            <span class="leg-item"><i class="leg-dot c-sys"></i> System</span>
+            <span class="leg-item"><i class="leg-dot c-doc"></i> Document</span>
+            <span class="leg-item"><i class="leg-dot c-per"></i> Person/Team</span>
+            <span class="leg-item"><i class="leg-dot c-tsk"></i> Task/Handoff</span>
+          </div>
+        </div>
+        <div class="impact-lab-node-inspector" id="node-inspector">
+          <div class="inspector-empty">Click any node in the graph above to inspect its properties and FalkorDB edge connections.</div>
+        </div>
+      </article>
+
+      <!-- Card 3: Affected Systems & PageRank -->
+      <article class="impact-lab-card card-blast">
+        <div class="impact-lab-card-header">
+          <span class="impact-lab-card-num">03</span>
+          <h3 class="impact-lab-card-title">Blast Radius &amp; PageRank Criticality</h3>
+          <span class="impact-lab-chip-warn" id="blast-count">0 Downstream</span>
+        </div>
+        <div class="impact-lab-card-body">
+          <div class="impact-lab-table-container">
+            <table class="impact-lab-table" id="table-systems">
+              <thead>
+                <tr>
+                  <th>System</th>
+                  <th>Hops</th>
+                  <th>PageRank</th>
+                  <th>Criticality</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-systems">
+                <!-- populated by JS -->
+              </tbody>
+            </table>
+          </div>
+          <div class="impact-lab-note">
+            Centrality computed natively via FalkorDB <code>algo.pageRank('System', 'DEPENDS_ON')</code>.
+          </div>
+        </div>
+      </article>
+
+      <!-- Card 4: Accountable Owners -->
+      <article class="impact-lab-card card-owners">
+        <div class="impact-lab-card-header">
+          <span class="impact-lab-card-num">04</span>
+          <h3 class="impact-lab-card-title">Accountable Reviewers &amp; Experts</h3>
+          <span class="impact-lab-chip-tag" id="owners-count">0 Contacts</span>
+        </div>
+        <div class="impact-lab-card-body">
+          <div class="impact-lab-owners-grid" id="owners-list">
+            <!-- populated by JS -->
+          </div>
+        </div>
+      </article>
+
+      <!-- Card 5: Stale Evidence Matrix -->
+      <article class="impact-lab-card card-stale">
+        <div class="impact-lab-card-header">
+          <span class="impact-lab-card-num">05</span>
+          <h3 class="impact-lab-card-title">Stale Decisions &amp; Invalidated Claims</h3>
+          <span class="impact-lab-chip-alert" id="stale-count">0 Stale</span>
+        </div>
+        <div class="impact-lab-card-body">
+          <div class="impact-lab-stale-list" id="stale-items">
+            <!-- populated by JS -->
+          </div>
+        </div>
+      </article>
+
+      <!-- Card 6: Human-in-the-Loop Change Request Draft -->
+      <article class="impact-lab-card card-action">
+        <div class="impact-lab-card-header">
+          <span class="impact-lab-card-num">06</span>
+          <h3 class="impact-lab-card-title">Proposed Action &amp; Rollback Checklist</h3>
+          <span class="impact-lab-badge-human">DRAFT &bull; HUMAN APPROVAL REQUIRED</span>
+        </div>
+        <div class="impact-lab-card-body">
+          <div class="impact-lab-callout-guard">
+            <strong>Strict Action Boundary:</strong> WhyGraph generates an auditable graph draft only. It never mutates external production queues or deletes infrastructure without human sign-off.
+          </div>
+          <div class="impact-lab-plan-box" id="plan-box">
+            <h4 id="plan-title" class="impact-lab-plan-title">Reversal Plan Draft</h4>
+            <div id="plan-body" class="impact-lab-plan-body">Loading simulation plan...</div>
+            <div class="impact-lab-checklist" id="plan-checklist">
+              <label class="check-item"><input type="checkbox" checked disabled> <span>Verify idempotency keys on Ledger Service</span></label>
+              <label class="check-item"><input type="checkbox" checked disabled> <span>Review Event Bus consumer lag metrics</span></label>
+              <label class="check-item"><input type="checkbox" checked disabled> <span>Require sign-off from Platform &amp; Billing team leads</span></label>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- Card 7: Real FalkorDB Query Receipts -->
+      <article class="impact-lab-card card-receipts">
+        <div class="impact-lab-card-header">
+          <span class="impact-lab-card-num">07</span>
+          <h3 class="impact-lab-card-title">FalkorDB Query Receipts &amp; Explainability</h3>
+          <span class="impact-lab-chip-tag" id="receipts-count">0 Queries Executed</span>
+        </div>
+        <div class="impact-lab-card-body">
+          <div class="impact-lab-why-falkor">
+            <div class="why-falkor-title">⚡ Why FalkorDB is Load-Bearing</div>
+            <p>Flat vector embeddings and standard relational SQL cannot trace dynamic, multi-hop dependency chains (<code>(:System)-[:DEPENDS_ON*1..4]-&gt;(:System)</code>) without recursive joins. FalkorDB executes graph traversals, native PageRank centrality, and shortest-path calculations in sub-10ms latency.</p>
+          </div>
+          <div class="impact-lab-receipts-list" id="receipts-list">
+            <!-- populated by JS -->
+          </div>
+        </div>
+      </article>
+
+    </section>
+  </main>
+
+  <!-- Toast Notification -->
+  <div id="lab-toast" class="impact-lab-toast" hidden></div>
+
+  <script src="/impact-lab.js"></script>
+</body>
+</html>

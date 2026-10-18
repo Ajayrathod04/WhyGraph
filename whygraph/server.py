@@ -136,7 +136,12 @@ def make_handler(app):
             return self._guard(lambda: app.post(url.path, body))
 
         def _static(self, path):
-            rel = "index.html" if path in ("", "/") else path.lstrip("/")
+            if path in ("", "/"):
+                rel = "index.html"
+            elif path in ("/impact-lab", "/impact-lab/"):
+                rel = "impact-lab.html"
+            else:
+                rel = path.lstrip("/")
             target = (cfg.web_dir / rel).resolve()
             if cfg.web_dir.resolve() not in target.parents and target != cfg.web_dir.resolve():
                 return self._json(403, {"error": "Forbidden"})
