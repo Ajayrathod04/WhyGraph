@@ -1,21 +1,30 @@
 # Submission pack for the Graph Hacks form
 
-Submission page fields (from the event page): Project title, Description, Track(s), Repository, Demo video (YouTube, public or unlisted), Live demo (optional), How did you use FalkorDB, Blog link (optional), and two required feedback answers. You can edit the submission until the deadline (18 Oct 2026, 11:59 PM IST). You cannot change your team after submitting.
+**Team Name:** Team Shunya Code
+**Team Lead:** Ajay Rathod
+**Submission Portal Form:** [https://www.wemakedevs.org/hackathons/falkordb](https://www.wemakedevs.org/hackathons/falkordb)
 
 ## Form answers (edit the brackets; keep it truthful)
 
-**Project title:** WhyGraph
+**Project title:** WhyGraph / RECALL
 
 **Description (what problem, who for):**
-Companies lose the reasons behind decisions. New engineering leads and product managers can't tell why something was decided, who knows about it, what breaks if it changes, or whether the evidence is still valid. WhyGraph is a company brain on FalkorDB: two cooperating agents (Analyst and Archivist) answer those questions by walking a graph of people, teams, systems, documents and decisions, and show the exact path and Cypher behind every answer. It also keeps knowledge current: when a new document replaces old evidence, dependent decisions are flagged stale and handed from one agent to the other through Task nodes. It runs on synthetic data for two fictional companies, each in its own FalkorDB graph.
+Companies lose the reasons behind architectural and product decisions. When engineers leave or systems evolve, new engineering leads cannot tell why a system was built a certain way, what breaks if it is reversed, or whether supporting evidence is still valid. WhyGraph is an organizational brain built on FalkorDB: two cooperating agents (Analyst and Archivist) answer these questions by traversing a live graph of people, teams, systems, documents, and decisions. It features Impact Lab (/impact-lab.html) to simulate changes, compute blast radius with native PageRank and shortest-path algorithms, propagate stale evidence, and draft human-approval change plans. All queries run against FalkorDB with parameterization and strict multi-tenant isolation.
 
-**Tracks:** select all three only if you demo all three (Company Brain, Agents That Act on Connected Data, Agent Memory and Coordination). If you cut scope, deselect the track you did not finish.
+**Tracks:**
+1. Track 03 — Company Brain (Primary)
+2. Track 02 — Agent Memory and Coordination
+3. Track 01 — Agents That Act on Connected Data
 
 **Repository:** https://github.com/Ajayrathod04/WhyGraph (public)
 
-**Demo video:** [YouTube link, public or unlisted]
+**Demo video:** [YouTube link, public or unlisted] (See docs/DEMO_RECORDING_GUIDE.md)
 
-**Live demo or deployment:** Local setup instructions verified on Windows/macOS/Linux via Docker Compose (see README).
+**Live demo or deployment:**
+- Local containerized deployment: Docker Compose on ports :6379 and :8000 (see README).
+- Cloud deployment configuration: Dockerfile, Procfile, and render.yaml included for one-click deployment connected to FalkorDB Cloud.
+
+**Blog post:** Draft available in docs/BLOG_POST.md
 
 **How did you use FalkorDB (technical problems solved):**
 - One isolated graph per team using FalkorDB multi-graph (`team_lumen`, `team_orbit`), so memory never leaks between tenants.
