@@ -2,23 +2,24 @@ services:
   - type: web
     name: whygraph
     runtime: python
+    plan: free
     buildCommand: pip install -r requirements.txt
     startCommand: python -m whygraph
     envVars:
       - key: HOST
         value: 0.0.0.0
-      - key: PORT
-        value: 8000
       - key: RENDER
         value: "true"
-      # Configure these in Render dashboard from your FalkorDB Cloud instance:
-      # - key: FALKORDB_HOST
-      #   sync: false
-      # - key: FALKORDB_PORT
-      #   sync: false
-      # - key: FALKORDB_USERNAME
-      #   sync: false
-      # - key: FALKORDB_PASSWORD
-      #   sync: false
-      # - key: FALKORDB_SSL
-      #   value: "true"
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: FALKORDB_HOST
+        sync: false
+      - key: FALKORDB_PORT
+        sync: false
+      - key: FALKORDB_USERNAME
+        sync: false
+      - key: FALKORDB_PASSWORD
+        sync: false
+      - key: FALKORDB_SSL
+        value: "true"
+
