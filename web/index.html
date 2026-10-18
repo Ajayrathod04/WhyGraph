@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WhyGraph - the company brain that remembers why</title>
+  <meta name="description" content="Ask why a decision was made. WhyGraph walks a FalkorDB graph and shows the exact path behind every answer.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;600&family=Unbounded:wght@600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <a class="skip" href="#ask-input">Skip to the question box</a>
+
+  <header class="topbar">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 40 40" aria-hidden="true">
+        <rect x="2" y="2" width="36" height="36" rx="11" fill="#ffd83d" stroke="#12123a" stroke-width="3"/>
+        <path d="M9 13 L15 29 L20 18 L25 29 L31 13" fill="none" stroke="#12123a" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="31" cy="13" r="3.6" fill="#ff3d9a" stroke="#12123a" stroke-width="2"/>
+      </svg>
+      <div>
+        <div class="brand-name">WhyGraph <span style="font-size: 0.6em; opacity: 0.8; font-weight: normal;">/ RECALL</span></div>
+        <div class="brand-sub">when a decision changes, discover what breaks before it breaks</div>
+      </div>
+    </div>
+
+    <div class="tenants" id="tenants" role="tablist" aria-label="Team graph (one isolated FalkorDB graph per team)"></div>
+
+    <div class="status">
+      <span class="chip" id="chip-db" title="FalkorDB connection"><i class="dot"></i><span>FalkorDB</span></span>
+      <span class="chip" id="chip-graph" title="Graph name in FalkorDB"></span>
+      <span class="chip" id="chip-llm" title="Answer phrasing mode"></span>
+      <button class="btn small ghost" id="btn-reset" title="Reload this team's synthetic seed data">Reset demo</button>
+    </div>
+  </header>
+
+  <div id="banner" class="banner" role="alert" hidden></div>
+
+  <main class="layout">
+    <!-- ASK -->
+    <section class="panel ask" aria-labelledby="h-ask">
+      <h2 id="h-ask">Ask the brain</h2>
+      <form id="ask-form" class="ask-form" autocomplete="off">
+        <label class="sr" for="ask-input">Your question</label>
+        <input id="ask-input" type="text" maxlength="500" placeholder="Why did we decide...? Who knows...? What breaks if...?" required>
+        <button class="btn" type="submit" id="btn-ask">Ask</button>
+      </form>
+      <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #8d8da8; margin-top: 10px; margin-bottom: 4px; font-family: 'JetBrains Mono', monospace;">Change Impact Simulations &amp; Scenarios:</div>
+      <div class="chips" id="examples" aria-label="Example questions"></div>
+      <div class="answers" id="answers" aria-live="polite">
+        <div class="empty" id="answers-empty">
+          <div class="empty-title">Every answer comes with a receipt.</div>
+          <p>Pick an example above. The path the agent walked lights up in the graph, each claim carries a source tag, and the Cypher behind it is one click away.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- GRAPH -->
+    <section class="panel canvas" aria-labelledby="h-graph">
+      <div class="canvas-head">
+        <h2 id="h-graph">Graph <span id="graph-count"></span></h2>
+        <div class="legend" id="legend" aria-label="Node types"></div>
+        <div class="ctrl">
+          <button class="btn small" id="btn-focus" aria-pressed="true" title="Dim everything except the path behind the last answer">Focus path</button>
+          <button class="btn small ghost" id="btn-clear" title="Clear the highlighted path">Clear</button>
+          <button class="btn small ghost" id="btn-fit" title="Fit graph to view">Fit</button>
+        </div>
+      </div>
+      <div class="stage">
+        <svg id="graph" role="img" aria-label="Knowledge graph of people, systems, documents and decisions" tabindex="0">
+          <defs>
+            <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0 0 L10 5 L0 10 z" fill="#ff3d9a"/>
+            </marker>
+          </defs>
+          <g id="viewport"><g id="edges"></g><g id="edge-labels"></g><g id="nodes"></g></g>
+        </svg>
+        <div class="stage-hint" id="stage-hint">Scroll to zoom, drag to pan, click a node for details.</div>
+        <div class="node-card" id="node-card" hidden></div>
+      </div>
+    </section>
+
+    <!-- SIDE -->
+    <aside class="panel side" aria-label="Agents, ingest, memory and changes">
+      <div class="tabs" role="tablist">
+        <button class="tab on" role="tab" aria-selected="true" data-tab="agents">Agents <span class="badge" id="badge-agents">0</span></button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="ingest">Ingest</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="memory">Memory</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="changes">Changes <span class="badge" id="badge-changes">0</span></button>
+      </div>
+
+      <div class="tabpane on" id="pane-agents" role="tabpanel">
+        <div class="stale-card" id="stale-card"></div>
+        <div class="row">
+          <button class="btn" id="btn-run">Run both agents</button>
+          <span class="muted small">Analyst assesses, then hands over to Archivist through Task nodes.</span>
+        </div>
+        <div class="timeline" id="timeline" aria-live="polite"></div>
+        <h3>Hand-off tasks</h3>
+        <div id="tasks"></div>
+      </div>
+
+      <div class="tabpane" id="pane-ingest" role="tabpanel" hidden>
+        <p class="muted">Paste a document. The <b>Archivist</b> extracts decisions, links them to systems and people, and marks any document it replaces as outdated.</p>
+        <label class="sr" for="ingest-text">Document text</label>
+        <textarea id="ingest-text" rows="10" spellcheck="false" placeholder="Title: ...&#10;Replaces: ...&#10;Decision: ...&#10;Decided by: ...&#10;Affects: ...&#10;Rationale: ..."></textarea>
+        <div class="row">
+          <button class="btn" id="btn-ingest">Ingest as Archivist</button>
+          <button class="btn ghost" id="btn-sample">Load sample</button>
+        </div>
+        <div id="ingest-result"></div>
+      </div>
+
+      <div class="tabpane" id="pane-memory" role="tabpanel" hidden>
+        <h3>Episodic memory <span class="muted small">questions asked, stored in the graph</span></h3>
+        <ul class="plain" id="mem-recent"></ul>
+        <h3>Most consulted decisions</h3>
+        <div class="chips" id="mem-frequent"></div>
+        <h3>Procedural memory <span class="muted small">playbooks the agent reads from the graph</span></h3>
+        <ul class="plain" id="mem-playbooks"></ul>
+      </div>
+
+      <div class="tabpane" id="pane-changes" role="tabpanel" hidden>
+        <p class="muted">Draft change requests the Analyst wrote into the graph. Ask for a reversal plan to create one.</p>
+        <div id="changes"></div>
+      </div>
+    </aside>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+  <script src="/app.js"></script>
+</body>
+</html>

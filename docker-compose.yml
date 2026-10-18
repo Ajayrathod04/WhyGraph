@@ -1,0 +1,14 @@
+# FalkorDB for local development. Port 6379 = database, 3000 = FalkorDB Browser (visual explorer).
+services:
+  falkordb:
+    image: falkordb/falkordb:latest
+    container_name: whygraph-falkordb
+    ports:
+      - "6379:6379"
+      - "3000:3000"
+    volumes:
+      - falkordb_data:/var/lib/falkordb/data   # keeps graphs between restarts (if the path differs in your image, the app simply re-seeds)
+    restart: unless-stopped
+
+volumes:
+  falkordb_data:

@@ -1,0 +1,538 @@
+{
+ "tenant": "orbit",
+ "name": "Orbit Logistics",
+ "blurb": "Synthetic logistics company: routing, tracking and carriers.",
+ "synthetic": true,
+ "sample_document": "Title: Route Optimisation Cost Study v2\nKind: Study\nReplaces: Route Optimisation Cost Study\nDecision: Run the route optimiser twice each night\nDecided by: Ingrid Larsen\nAffects: Route Planner\nRationale: The new study shows a second nightly run cuts a further 2 percent of fuel cost.",
+ "examples": [
+  "Why did we switch to nightly route optimisation?",
+  "Who should I ask about the tracking API?",
+  "Which decisions are stale?",
+  "What breaks if the telemetry feed goes down?"
+ ],
+ "nodes": {
+  "Team": [
+   {
+    "id": "t_routing",
+    "name": "Routing"
+   },
+   {
+    "id": "t_ops",
+    "name": "Operations"
+   },
+   {
+    "id": "t_fleet",
+    "name": "Fleet Tech"
+   }
+  ],
+  "Person": [
+   {
+    "id": "p_ingrid",
+    "name": "Ingrid Larsen",
+    "team": "Routing"
+   },
+   {
+    "id": "p_kofi",
+    "name": "Kofi Mensah",
+    "team": "Operations"
+   },
+   {
+    "id": "p_yuki",
+    "name": "Yuki Tanaka",
+    "team": "Fleet Tech"
+   },
+   {
+    "id": "p_carlos",
+    "name": "Carlos Ruiz",
+    "team": "Operations"
+   },
+   {
+    "id": "p_nora",
+    "name": "Nora Haddad",
+    "team": "Routing"
+   }
+  ],
+  "System": [
+   {
+    "id": "s_route",
+    "name": "Route Planner",
+    "criticality": 5,
+    "aliases": "routing, route optimisation, route optimization"
+   },
+   {
+    "id": "s_track",
+    "name": "Tracking API",
+    "criticality": 4,
+    "aliases": "tracking, parcel tracking"
+   },
+   {
+    "id": "s_telem",
+    "name": "Fleet Telemetry",
+    "criticality": 4,
+    "aliases": "telemetry, telemetry feed, vehicle data"
+   },
+   {
+    "id": "s_dispatch",
+    "name": "Dispatch Console",
+    "criticality": 3,
+    "aliases": "dispatch"
+   },
+   {
+    "id": "s_scan",
+    "name": "Warehouse Scanner Sync",
+    "criticality": 3,
+    "aliases": "scanners, scanner sync"
+   },
+   {
+    "id": "s_carrier",
+    "name": "Carrier Billing",
+    "criticality": 3,
+    "aliases": "carrier rates, billing"
+   }
+  ],
+  "Project": [
+   {
+    "id": "pr_night",
+    "name": "Nightly Optimiser"
+   },
+   {
+    "id": "pr_scan2",
+    "name": "Scanner Refresh"
+   },
+   {
+    "id": "pr_rates",
+    "name": "Carrier Rate Refresh"
+   }
+  ],
+  "Document": [
+   {
+    "id": "doc_study",
+    "title": "Route Optimisation Cost Study",
+    "kind": "Study",
+    "date": "2026-02-02",
+    "status": "current",
+    "url": "https://orbit.example/docs/route-study",
+    "excerpt": "Re-optimising every night cuts fuel cost by 6 percent versus continuous re-planning."
+   },
+   {
+    "id": "doc_telem",
+    "title": "Telemetry Batching Test Results",
+    "kind": "Report",
+    "date": "2026-03-15",
+    "status": "current",
+    "url": "https://orbit.example/docs/telemetry-batching",
+    "excerpt": "Batching positions every 30 seconds keeps cellular cost low with no visible tracking delay."
+   },
+   {
+    "id": "doc_rates25",
+    "title": "Carrier Rate Table 2025",
+    "kind": "Rates",
+    "date": "2025-01-10",
+    "status": "outdated",
+    "url": "https://orbit.example/docs/rates-2025",
+    "excerpt": "Standard parcel rate: 4.10 per kg for zone B."
+   },
+   {
+    "id": "doc_rates26",
+    "title": "Carrier Rate Table 2026",
+    "kind": "Rates",
+    "date": "2026-01-10",
+    "status": "current",
+    "url": "https://orbit.example/docs/rates-2026",
+    "excerpt": "Standard parcel rate: 4.65 per kg for zone B."
+   },
+   {
+    "id": "doc_scan",
+    "title": "Scanner Sync Incident Review",
+    "kind": "Postmortem",
+    "date": "2026-04-04",
+    "status": "current",
+    "url": "https://orbit.example/docs/scanner-incident",
+    "excerpt": "Lost scans were caused by unbounded offline queues on handheld devices."
+   },
+   {
+    "id": "doc_dispatch",
+    "title": "Dispatcher Interview Notes",
+    "kind": "Research",
+    "date": "2026-05-12",
+    "status": "current",
+    "url": "https://orbit.example/docs/dispatcher-notes",
+    "excerpt": "Dispatchers want a single map with live exceptions."
+   }
+  ],
+  "Decision": [
+   {
+    "id": "d_nightly",
+    "title": "Switch to nightly route optimisation",
+    "date": "2026-02-12",
+    "status": "active",
+    "rationale": "Saves about 6 percent fuel cost compared with continuous re-planning.",
+    "aliases": "nightly route optimisation, nightly optimisation, nightly optimization"
+   },
+   {
+    "id": "d_batch",
+    "title": "Batch vehicle telemetry every 30 seconds",
+    "date": "2026-03-20",
+    "status": "active",
+    "rationale": "Keeps cellular cost low with no visible delay for customers.",
+    "aliases": "telemetry batching, batch telemetry"
+   },
+   {
+    "id": "d_rates",
+    "title": "Quote shipments using the 2025 carrier rate table",
+    "date": "2025-01-20",
+    "status": "active",
+    "rationale": "It was the signed rate table at the time.",
+    "aliases": "carrier rates, rate table, quote shipments"
+   },
+   {
+    "id": "d_offline",
+    "title": "Cap offline scan queues on handheld devices",
+    "date": "2026-04-10",
+    "status": "active",
+    "rationale": "Unbounded queues caused lost scans in the April incident.",
+    "aliases": "offline queue, scan queue, handheld queue"
+   },
+   {
+    "id": "d_map",
+    "title": "Build a single live exceptions map for dispatchers",
+    "date": "2026-05-20",
+    "status": "active",
+    "rationale": "Dispatchers asked for one map instead of three screens.",
+    "aliases": "live map, exceptions map, dispatcher map"
+   },
+   {
+    "id": "d_replan",
+    "title": "Re-plan routes continuously during the day",
+    "date": "2024-06-01",
+    "status": "superseded",
+    "rationale": "It reacted quickly to traffic but cost more fuel.",
+    "aliases": "continuous replanning, continuous re-planning"
+   }
+  ],
+  "Playbook": [
+   {
+    "id": "pb_why",
+    "title": "why",
+    "steps": "trace,stale_check",
+    "uses": 0
+   },
+   {
+    "id": "pb_who",
+    "title": "who",
+    "steps": "who_knows",
+    "uses": 0
+   },
+   {
+    "id": "pb_impact",
+    "title": "impact",
+    "steps": "impact,pagerank",
+    "uses": 0
+   },
+   {
+    "id": "pb_stale",
+    "title": "stale",
+    "steps": "stale_scan",
+    "uses": 0
+   },
+   {
+    "id": "pb_plan",
+    "title": "plan",
+    "steps": "impact,pagerank,shortest_path,plan",
+    "uses": 0
+   }
+  ]
+ },
+ "edges": [
+  [
+   "p_ingrid",
+   "MEMBER_OF",
+   "t_routing"
+  ],
+  [
+   "p_nora",
+   "MEMBER_OF",
+   "t_routing"
+  ],
+  [
+   "p_kofi",
+   "MEMBER_OF",
+   "t_ops"
+  ],
+  [
+   "p_carlos",
+   "MEMBER_OF",
+   "t_ops"
+  ],
+  [
+   "p_yuki",
+   "MEMBER_OF",
+   "t_fleet"
+  ],
+  [
+   "t_routing",
+   "OWNS",
+   "s_route"
+  ],
+  [
+   "t_ops",
+   "OWNS",
+   "s_dispatch"
+  ],
+  [
+   "t_ops",
+   "OWNS",
+   "s_carrier"
+  ],
+  [
+   "t_ops",
+   "OWNS",
+   "s_scan"
+  ],
+  [
+   "t_fleet",
+   "OWNS",
+   "s_telem"
+  ],
+  [
+   "t_fleet",
+   "OWNS",
+   "s_track"
+  ],
+  [
+   "s_route",
+   "DEPENDS_ON",
+   "s_telem"
+  ],
+  [
+   "s_track",
+   "DEPENDS_ON",
+   "s_telem"
+  ],
+  [
+   "s_dispatch",
+   "DEPENDS_ON",
+   "s_route"
+  ],
+  [
+   "s_dispatch",
+   "DEPENDS_ON",
+   "s_track"
+  ],
+  [
+   "s_carrier",
+   "DEPENDS_ON",
+   "s_track"
+  ],
+  [
+   "s_scan",
+   "DEPENDS_ON",
+   "s_track"
+  ],
+  [
+   "pr_night",
+   "USES",
+   "s_route"
+  ],
+  [
+   "pr_night",
+   "USES",
+   "s_telem"
+  ],
+  [
+   "pr_scan2",
+   "USES",
+   "s_scan"
+  ],
+  [
+   "pr_scan2",
+   "USES",
+   "s_track"
+  ],
+  [
+   "pr_rates",
+   "USES",
+   "s_carrier"
+  ],
+  [
+   "p_ingrid",
+   "WORKED_ON",
+   "pr_night"
+  ],
+  [
+   "p_nora",
+   "WORKED_ON",
+   "pr_night"
+  ],
+  [
+   "p_yuki",
+   "WORKED_ON",
+   "pr_night"
+  ],
+  [
+   "p_carlos",
+   "WORKED_ON",
+   "pr_scan2"
+  ],
+  [
+   "p_yuki",
+   "WORKED_ON",
+   "pr_scan2"
+  ],
+  [
+   "p_kofi",
+   "WORKED_ON",
+   "pr_rates"
+  ],
+  [
+   "p_ingrid",
+   "KNOWS",
+   "s_route"
+  ],
+  [
+   "p_nora",
+   "KNOWS",
+   "s_route"
+  ],
+  [
+   "p_yuki",
+   "KNOWS",
+   "s_telem"
+  ],
+  [
+   "p_yuki",
+   "KNOWS",
+   "s_track"
+  ],
+  [
+   "p_kofi",
+   "KNOWS",
+   "s_carrier"
+  ],
+  [
+   "p_kofi",
+   "KNOWS",
+   "s_dispatch"
+  ],
+  [
+   "p_carlos",
+   "KNOWS",
+   "s_scan"
+  ],
+  [
+   "p_carlos",
+   "KNOWS",
+   "s_dispatch"
+  ],
+  [
+   "p_ingrid",
+   "DECIDED",
+   "d_nightly"
+  ],
+  [
+   "p_nora",
+   "DECIDED",
+   "d_nightly"
+  ],
+  [
+   "p_yuki",
+   "DECIDED",
+   "d_batch"
+  ],
+  [
+   "p_kofi",
+   "DECIDED",
+   "d_rates"
+  ],
+  [
+   "p_carlos",
+   "DECIDED",
+   "d_offline"
+  ],
+  [
+   "p_kofi",
+   "DECIDED",
+   "d_map"
+  ],
+  [
+   "p_ingrid",
+   "DECIDED",
+   "d_replan"
+  ],
+  [
+   "d_nightly",
+   "BASED_ON",
+   "doc_study"
+  ],
+  [
+   "d_batch",
+   "BASED_ON",
+   "doc_telem"
+  ],
+  [
+   "d_rates",
+   "BASED_ON",
+   "doc_rates25"
+  ],
+  [
+   "d_offline",
+   "BASED_ON",
+   "doc_scan"
+  ],
+  [
+   "d_map",
+   "BASED_ON",
+   "doc_dispatch"
+  ],
+  [
+   "d_replan",
+   "BASED_ON",
+   "doc_study"
+  ],
+  [
+   "d_nightly",
+   "AFFECTS",
+   "s_route"
+  ],
+  [
+   "d_batch",
+   "AFFECTS",
+   "s_telem"
+  ],
+  [
+   "d_batch",
+   "AFFECTS",
+   "s_track"
+  ],
+  [
+   "d_rates",
+   "AFFECTS",
+   "s_carrier"
+  ],
+  [
+   "d_offline",
+   "AFFECTS",
+   "s_scan"
+  ],
+  [
+   "d_map",
+   "AFFECTS",
+   "s_dispatch"
+  ],
+  [
+   "d_replan",
+   "AFFECTS",
+   "s_route"
+  ],
+  [
+   "d_nightly",
+   "SUPERSEDES",
+   "d_replan"
+  ],
+  [
+   "doc_rates25",
+   "REPLACED_BY",
+   "doc_rates26"
+  ]
+ ]
+}
