@@ -19,9 +19,18 @@ MAX_BODY = 64 * 1024
 
 
 class App:
-    def __init__(self, store):
-        self.store = store
+    def __init__(self, store=None):
+        self._store = store
         self.seeds = loader.list_seeds()
+        self.db_error = None
+        self.loaded = False
+
+    @property
+    def store(self):
+        if self._store is None:
+            from .db import Store
+            self._store = Store()
+        return self._store
 
     def tenant(self, name):
         if name not in self.seeds:
@@ -29,18 +38,21 @@ class App:
         return name
 
     def node_count(self, tenant):
-        try:
-            rows = Ctx(self.store, tenant).q("count", Q.Q_COUNT, quiet=True)
-            return int(rows[0][0]) if rows else 0
-        except Exception:
-            return 0
+        rows = Ctx(self.store, tenant).q("count", Q.Q_COUNT, quiet=True)
+        return int(rows[0][0]) if rows else 0
 
     def ensure_loaded(self):
         """Load each tenant's seed on first start (an empty graph means 'not loaded yet')."""
-        for tenant, seed in self.seeds.items():
-            if self.node_count(tenant) == 0:
-                info = loader.load_tenant(self.store, seed)
-                print(f"[seed] loaded {tenant}: {info['nodes']} nodes, {info['edges']} edges", flush=True)
+        try:
+            for tenant, seed in self.seeds.items():
+                if self.node_count(tenant) == 0:
+                    info = loader.load_tenant(self.store, seed)
+                    print(f"[seed] loaded {tenant}: {info['nodes']} nodes, {info['edges']} edges", flush=True)
+            self.db_error = None
+            self.loaded = True
+        except Exception as exc:
+            self.db_error = str(exc)
+            raise
 
     def health(self):
         try:
@@ -53,8 +65,10 @@ class App:
                         "nodes": self.node_count(tenant), "graph": cfg.graph_prefix + tenant,
                     }
                 )
+            self.db_error = None
             return {"falkordb": True, "tenants": tenants, "llm": {"mode": llm.mode(), "model": cfg.llm_model if llm.enabled() else ""}}
         except Exception as exc:  # database not reachable
+            self.db_error = str(exc)
             return {"falkordb": False, "error": str(exc), "tenants": [], "llm": {"mode": llm.mode(), "model": ""}}
 
     # ---- routes: each returns a JSON-serialisable object
@@ -160,26 +174,27 @@ def make_handler(app):
 
 
 def serve(store=None):
-    from .db import Store
+    import threading
 
-    try:
-        store = store or Store()
-    except ImportError:
-        print("[error] the 'falkordb' package is not installed. Activate your virtualenv and run:  pip install -r requirements.txt")
-        raise SystemExit(1)
-    except Exception as exc:
-        print(f"[warn] could not reach FalkorDB at {cfg.falkor_host}:{cfg.falkor_port}: {exc}")
-        print("       Start it with:  docker compose up -d   (then restart this server)")
-        raise SystemExit(1)
     app = App(store)
-    try:
-        app.ensure_loaded()
-    except Exception as exc:
-        print(f"[warn] could not reach FalkorDB at {cfg.falkor_host}:{cfg.falkor_port}: {exc}")
-        print("       Start it with:  docker compose up -d   (then restart this server)")
-        raise SystemExit(1)
+
+    # 1. Bind and open the HTTP port IMMEDIATELY so Render / cloud port scanners succeed
     httpd = ThreadingHTTPServer((cfg.host, cfg.port), make_handler(app))
     print(f"WhyGraph running at http://{cfg.host}:{cfg.port}   (LLM mode: {llm.mode()})", flush=True)
+
+    # 2. Asynchronously connect to FalkorDB and seed graphs
+    def _init_graph():
+        try:
+            app.ensure_loaded()
+            print("[falkordb] connection established and tenant graphs ready.", flush=True)
+        except Exception as exc:
+            print(f"[warn] could not reach FalkorDB at {cfg.falkor_host}:{cfg.falkor_port}: {exc}", flush=True)
+            print("       If running locally, start it with:  docker compose up -d", flush=True)
+            print("       If running in the cloud, verify your FalkorDB Cloud credentials.", flush=True)
+
+    init_thread = threading.Thread(target=_init_graph, daemon=True)
+    init_thread.start()
+
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:

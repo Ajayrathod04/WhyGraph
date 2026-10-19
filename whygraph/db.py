@@ -11,13 +11,23 @@ from .config import cfg
 
 
 class Store:
-    def __init__(self):
+    def __init__(self, timeout=3.0):
         from falkordb import FalkorDB  # imported lazily so unit tests run without the package
 
         if cfg.falkor_url:
-            self.db = FalkorDB.from_url(cfg.falkor_url)
+            url = cfg.falkor_url
+            if url.startswith("falkordbs://"):
+                url = "rediss://" + url[len("falkordbs://"):]
+            elif url.startswith("falkordb://"):
+                url = "redis://" + url[len("falkordb://"):]
+            self.db = FalkorDB.from_url(url, socket_timeout=timeout, socket_connect_timeout=timeout)
         else:
-            kwargs = {"host": cfg.falkor_host, "port": cfg.falkor_port}
+            kwargs = {
+                "host": cfg.falkor_host,
+                "port": cfg.falkor_port,
+                "socket_timeout": timeout,
+                "socket_connect_timeout": timeout,
+            }
             if cfg.falkor_username:
                 kwargs["username"] = cfg.falkor_username
             if cfg.falkor_password:

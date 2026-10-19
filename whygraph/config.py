@@ -42,7 +42,7 @@ class Config:
     llm_api_key = os.environ.get("LLM_API_KEY", "")
     llm_model = os.environ.get("LLM_MODEL", "gpt-4o-mini")
 
-    host = os.environ.get("HOST", "0.0.0.0" if os.environ.get("RENDER") else "127.0.0.1")
+    host = os.environ.get("HOST", "0.0.0.0" if (os.environ.get("RENDER") or os.environ.get("PORT")) else "127.0.0.1")
     port = _int("PORT", 8000)
 
     seed_dir = ROOT / "seed"
